@@ -119,12 +119,11 @@ class DalleTransformer(torch.nn.Module):
 
     def _get_layer_mask(self, layer_id):
         if ((layer_id - 1) % 4 == 0):
-            layer_mask = self.col_mask
+            return self.col_mask
         elif layer_id != self.num_layers - 1:
-            layer_mask = self.row_mask
+            return self.row_mask
         else:
-            layer_mask = self.conv_mask
-        return layer_mask
+            return self.conv_mask
 
     def forward(self, hidden_states, attention_mask, cache=None, use_cache=False, gradient_checkpointing=None):
         if cache is None:
@@ -436,5 +435,4 @@ class DalleMLP(torch.nn.Module):
         # [b, s, h]
         x = self.dense_4h_to_h(x)
 
-        output = self.dropout(x)
-        return output
+        return self.dropout(x)

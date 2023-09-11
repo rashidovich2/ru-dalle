@@ -14,8 +14,9 @@ def get_requirements():
     requirements = []
     for requirement in read('requirements.txt').splitlines():
         if requirement.startswith('git+') or requirement.startswith('svn+') or requirement.startswith('hg+'):
-            parsed_requires = re.findall(r'#egg=([\w\d\.]+)-([\d\.]+)$', requirement)
-            if parsed_requires:
+            if parsed_requires := re.findall(
+                r'#egg=([\w\d\.]+)-([\d\.]+)$', requirement
+            ):
                 package, version = parsed_requires[0]
                 requirements.append(f'{package}=={version}')
             else:

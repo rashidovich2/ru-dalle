@@ -14,32 +14,27 @@ TEST_ROOT = dirname(abspath(__file__))
 
 @pytest.fixture(scope='module')
 def realesrgan():
-    realesrgan = get_realesrgan('x2', device='cpu')
-    yield realesrgan
+    yield get_realesrgan('x2', device='cpu')
 
 
 @pytest.fixture(scope='module')
 def vae():
-    vae = get_vae(pretrained=False)
-    yield vae
+    yield get_vae(pretrained=False)
 
 
 @pytest.fixture(scope='module')
 def pretrained_vae():
-    vae = get_vae()
-    yield vae
+    yield get_vae()
 
 
 @pytest.fixture(scope='module')
 def dwt_vae():
-    vae = get_vae(pretrained=False, dwt=True)
-    yield vae
+    yield get_vae(pretrained=False, dwt=True)
 
 
 @pytest.fixture(scope='module')
 def yttm_tokenizer():
-    tokenizer = get_tokenizer()
-    yield tokenizer
+    yield get_tokenizer()
 
 
 @pytest.fixture(scope='module')
@@ -47,41 +42,36 @@ def sample_image():
     url = 'https://cdn.kqed.org/wp-content/uploads/sites/12/2013/12/rudolph.png'
     resp = requests.get(url)
     resp.raise_for_status()
-    image = PIL.Image.open(io.BytesIO(resp.content))
-    yield image
+    yield PIL.Image.open(io.BytesIO(resp.content))
 
 
 @pytest.fixture(scope='module')
 def sample_image_cat():
-    image = PIL.Image.open('pics/ginger_cat.jpeg')
-    yield image
+    yield PIL.Image.open('pics/ginger_cat.jpeg')
 
 
 @pytest.fixture(scope='module')
 def small_dalle():
-    model = get_rudalle_model('dummy', pretrained=False, fp16=False, device='cpu')
-    yield model
+    yield get_rudalle_model('dummy', pretrained=False, fp16=False, device='cpu')
 
 
 @pytest.fixture(scope='module')
 def xl_dalle():
-    model = get_rudalle_model('Malevich', pretrained=True, fp16=False, device='cpu')
-    yield model
+    yield get_rudalle_model('Malevich', pretrained=True, fp16=False, device='cpu')
 
 
 @pytest.fixture(scope='module')
 def xxl_dalle():
-    model = get_rudalle_model(
+    yield get_rudalle_model(
         'Kandinsky',
         pretrained=False,
         fp16=False,
         device='cpu',
         cogview_layernorm_prescale=True,
-        custom_relax=True)
-    yield model
+        custom_relax=True,
+    )
 
 
 @pytest.fixture(scope='module')
 def emojich_unet():
-    model = get_emojich_unet('unet_effnetb5')
-    yield model
+    yield get_emojich_unet('unet_effnetb5')

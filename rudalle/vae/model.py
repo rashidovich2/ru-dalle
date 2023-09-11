@@ -107,5 +107,4 @@ class GumbelVQ(nn.Module):
             quant = self.decoder.post_quant_conv(quant)
         else:
             quant = self.post_quant_conv(quant)
-        dec = self.decoder(quant)
-        return dec
+        return self.decoder(quant)

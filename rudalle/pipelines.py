@@ -75,18 +75,14 @@ def generate_images(text, tokenizer, dalle, vae, top_k, top_p, images_num, image
     ppl_scores = torch.cat(ppl_scores)
     indexes = ppl_scores.argsort()
 
-    sorted_pil_images = []
-    for idx in indexes:
-        sorted_pil_images.append(pil_images[idx.item()])
-
+    sorted_pil_images = [pil_images[idx.item()] for idx in indexes]
     return sorted_pil_images, ppl_scores[indexes].cpu().numpy().tolist()
 
 
 def ce_to_ppl(ce):
     indexes = torch.where(ce)
     ce[indexes] = torch.exp(ce[indexes])
-    ppl = ce.sum(1) / torch.unique(indexes[0], return_counts=True)[1]
-    return ppl
+    return ce.sum(1) / torch.unique(indexes[0], return_counts=True)[1]
 
 
 def super_resolution(pil_images, realesrgan, batch_size=4):
@@ -105,10 +101,8 @@ def cherry_pick_by_ruclip(pil_images, text, clip_predictor, count=4):
         image_latents = clip_predictor.get_image_latents(pil_images)
         logits_per_image = torch.matmul(image_latents, text_latents.t())
         scores = logits_per_image.view(-1)
-    top_pil_images = []
     indexes = scores.argsort(descending=True)[:count]
-    for idx in indexes:
-        top_pil_images.append(pil_images[idx])
+    top_pil_images = [pil_images[idx] for idx in indexes]
     return top_pil_images, scores[indexes].cpu().numpy().tolist()
 
 

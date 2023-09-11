@@ -54,5 +54,4 @@ def preprocess_vqgan(x):
 def reconstruct_with_vqgan(x, model):
     z, _, [_, _, _] = model.encode(x)
     print(f'VQGAN --- {model.__class__.__name__}: latent shape: {z.shape[2:]}')
-    xrec = model.decode(z)
-    return xrec
+    return model.decode(z)

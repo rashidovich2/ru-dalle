@@ -4,8 +4,13 @@ import torch
 
 def _init_mask(text_tokens, image_tokens_per_dim, is_bool_mask=False):
     attn_size = text_tokens + image_tokens_per_dim**2
-    mask = torch.tril(torch.ones(attn_size, attn_size, dtype=torch.bool if is_bool_mask else torch.float32))
-    return mask
+    return torch.tril(
+        torch.ones(
+            attn_size,
+            attn_size,
+            dtype=torch.bool if is_bool_mask else torch.float32,
+        )
+    )
 
 
 def get_row_mask(text_tokens=256, image_tokens_per_dim=32, is_bool_mask=False):

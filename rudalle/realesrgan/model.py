@@ -45,15 +45,15 @@ class RealESRGAN:
             img = torch.FloatTensor(patches / 255).permute((0, 3, 1, 2)).to(device).detach()
 
         with torch.no_grad():
-            res = self.model(img[0:batch_size])
+            res = self.model(img[:batch_size])
             for i in range(batch_size, img.shape[0], batch_size):
                 res = torch.cat((res, self.model(img[i:i + batch_size])), 0)
 
         sr_image = res.permute((0, 2, 3, 1)).cpu().clamp_(0, 1)
         np_sr_image = sr_image.numpy()
 
-        padded_size_scaled = tuple(np.multiply(p_shape[0:2], scale)) + (3,)
-        scaled_image_shape = tuple(np.multiply(lr_image.shape[0:2], scale)) + (3,)
+        padded_size_scaled = tuple(np.multiply(p_shape[:2], scale)) + (3,)
+        scaled_image_shape = tuple(np.multiply(lr_image.shape[:2], scale)) + (3,)
         np_sr_image = stich_together(np_sr_image, padded_image_shape=padded_size_scaled,
                                      target_shape=scaled_image_shape, padding_size=padding * scale)
         sr_img = (np_sr_image * 255).astype(np.uint8)

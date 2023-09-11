@@ -38,7 +38,7 @@ def sfb1d(lo, hi, g0, g1, mode='zero', dim=-1):
     s = (2, 1) if d == 2 else (1, 2)
     g0 = torch.cat([g0]*C, dim=0)
     g1 = torch.cat([g1]*C, dim=0)
-    if mode == 'per' or mode == 'periodization':
+    if mode in ['per', 'periodization']:
         y = F.conv_transpose2d(lo, g0, stride=s, groups=C) + \
             F.conv_transpose2d(hi, g1, stride=s, groups=C)
         if d == 2:
@@ -48,14 +48,12 @@ def sfb1d(lo, hi, g0, g1, mode='zero', dim=-1):
             y[:, :, :, :L-2] = y[:, :, :, :L-2] + y[:, :, :, N:N+L-2]
             y = y[:, :, :, :N]
         y = roll(y, 1-L//2, dim=dim)
+    elif mode in ['zero', 'symmetric', 'reflect', 'periodic']:
+        pad = (L-2, 0) if d == 2 else (0, L-2)
+        y = F.conv_transpose2d(lo, g0, stride=s, padding=pad, groups=C) + \
+            F.conv_transpose2d(hi, g1, stride=s, padding=pad, groups=C)
     else:
-        if mode == 'zero' or mode == 'symmetric' or mode == 'reflect' or \
-                mode == 'periodic':
-            pad = (L-2, 0) if d == 2 else (0, L-2)
-            y = F.conv_transpose2d(lo, g0, stride=s, padding=pad, groups=C) + \
-                F.conv_transpose2d(hi, g1, stride=s, padding=pad, groups=C)
-        else:
-            raise ValueError('Unkown pad type: {}'.format(mode))
+        raise ValueError(f'Unkown pad type: {mode}')
 
     return y
 
@@ -66,27 +64,21 @@ def _SFB2D(low, highs, g0_row, g1_row, g0_col, g1_col, mode):
     lh, hl, hh = torch.unbind(highs, dim=2)
     lo = sfb1d(low, lh, g0_col, g1_col, mode=mode, dim=2)
     hi = sfb1d(hl, hh, g0_col, g1_col, mode=mode, dim=2)
-    y = sfb1d(lo, hi, g0_row, g1_row, mode=mode, dim=3)
-
-    return y
+    return sfb1d(lo, hi, g0_row, g1_row, mode=mode, dim=3)
 
 
 def roll(x, n, dim, make_even=False):
     if n < 0:
         n = x.shape[dim] + n
 
-    if make_even and x.shape[dim] % 2 == 1:
-        end = 1
-    else:
-        end = 0
-
+    end = 1 if make_even and x.shape[dim] % 2 == 1 else 0
     if dim == 0:
         return torch.cat((x[-n:], x[:-n+end]), dim=0)
     elif dim == 1:
         return torch.cat((x[:, -n:], x[:, :-n+end]), dim=1)
-    elif dim == 2 or dim == -2:
+    elif dim in [2, -2]:
         return torch.cat((x[:, :, -n:], x[:, :, :-n+end]), dim=2)
-    elif dim == 3 or dim == -1:
+    elif dim in [3, -1]:
         return torch.cat((x[:, :, :, -n:], x[:, :, :, :-n+end]), dim=3)
 
 
@@ -106,7 +98,7 @@ def int_to_mode(mode):
     elif mode == 6:
         return 'periodic'
     else:
-        raise ValueError('Unkown pad type: {}'.format(mode))
+        raise ValueError(f'Unkown pad type: {mode}')
 
 
 def prep_filt_sfb2d(g0_col, g1_col, g0_row=None, g1_row=None, device=None):
@@ -165,7 +157,7 @@ def mode_to_int(mode):
         return 0
     elif mode == 'symmetric':
         return 1
-    elif mode == 'per' or mode == 'periodization':
+    elif mode in ['per', 'periodization']:
         return 2
     elif mode == 'constant':
         return 3
@@ -176,7 +168,7 @@ def mode_to_int(mode):
     elif mode == 'periodic':
         return 6
     else:
-        raise ValueError('Unkown pad type: {}'.format(mode))
+        raise ValueError(f'Unkown pad type: {mode}')
 
 
 def afb1d(x, h0, h1, mode='zero', dim=-1):
@@ -220,7 +212,7 @@ def afb1d(x, h0, h1, mode='zero', dim=-1):
         h1 = h1.reshape(*shape)
     h = torch.cat([h0, h1] * C, dim=0)
 
-    if mode == 'per' or mode == 'periodization':
+    if mode in ['per', 'periodization']:
         if x.shape[dim] % 2 == 1:
             if d == 2:
                 x = torch.cat((x, x[:, :, -1:]), dim=2)
@@ -251,12 +243,12 @@ def afb1d(x, h0, h1, mode='zero', dim=-1):
             pad = (p//2, 0) if d == 2 else (0, p//2)
             # Calculate the high and lowpass
             lohi = F.conv2d(x, h, padding=pad, stride=s, groups=C)
-        elif mode == 'symmetric' or mode == 'reflect' or mode == 'periodic':
+        elif mode in ['symmetric', 'reflect', 'periodic']:
             pad = (0, 0, p//2, (p+1)//2) if d == 2 else (p//2, (p+1)//2, 0, 0)
             x = mypad(x, pad=pad, mode=mode)
             lohi = F.conv2d(x, h, stride=s, groups=C)
         else:
-            raise ValueError('Unkown pad type: {}'.format(mode))
+            raise ValueError(f'Unkown pad type: {mode}')
 
     return lohi
 
@@ -315,12 +307,12 @@ def mypad(x, pad, mode='constant', value=0):
             j = np.outer(np.ones(xe_col.shape[0]), xe_row)
             return x[:, :, i, j]
 
-    elif mode == 'constant' or mode == 'reflect' or mode == 'replicate':
+    elif mode in ['constant', 'reflect', 'replicate']:
         return F.pad(x, pad, mode, value)
     elif mode == 'zero':
         return F.pad(x, pad)
     else:
-        raise ValueError('Unkown pad type: {}'.format(mode))
+        raise ValueError(f'Unkown pad type: {mode}')
 
 
 def reflect(x, minx, maxx):
@@ -369,8 +361,7 @@ class SFB2D(Function):
         lh, hl, hh = torch.unbind(highs, dim=2)
         lo = sfb1d(low, lh, g0_col, g1_col, mode=mode, dim=2)
         hi = sfb1d(hl, hh, g0_col, g1_col, mode=mode, dim=2)
-        y = sfb1d(lo, hi, g0_row, g1_row, mode=mode, dim=3)
-        return y
+        return sfb1d(lo, hi, g0_row, g1_row, mode=mode, dim=3)
 
     @staticmethod
     def backward(ctx, dy):
